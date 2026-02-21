@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BookingForm } from "../../components/booking/BookingForm";
 import { CalendarView } from "../../components/booking/CalendarView";
@@ -27,29 +27,29 @@ export default function BookingPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<Reservation | null>(null);
 
-  async function loadSlots() {
+  const loadSlots = useCallback(async () => {
     const response = await fetch(`/api/booking/slots?date=${date}&timezone=${encodeURIComponent(timezone)}&slotMinutes=30`);
     const payload = (await response.json()) as { slots?: Slot[]; error?: string };
     if (!response.ok) throw new Error(payload.error ?? "Failed to load slots.");
     setSlots(payload.slots ?? []);
-  }
+  }, [date, timezone]);
 
-  async function loadReservations() {
+  const loadReservations = useCallback(async () => {
     const response = await fetch("/api/booking/reservations");
     const payload = (await response.json()) as { reservations?: Reservation[]; error?: string };
     if (!response.ok) throw new Error(payload.error ?? "Failed to load reservations.");
     setReservations(payload.reservations ?? []);
-  }
+  }, []);
 
   useEffect(() => {
     setError(null);
     setSelectedStartUtc(undefined);
     loadSlots().catch((e) => setError(e instanceof Error ? e.message : "Failed to load slots."));
-  }, [date, timezone]);
+  }, [loadSlots]);
 
   useEffect(() => {
     loadReservations().catch((e) => setError(e instanceof Error ? e.message : "Failed to load reservations."));
-  }, []);
+  }, [loadReservations]);
 
   return (
     <main className="booking-shell">
